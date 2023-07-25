@@ -1,0 +1,72 @@
+version: '3'
+services:
+  opensearch-node:
+    image: eventsserver:latest
+    container_name: events-node
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node
+      - discovery.seed_hosts=opensearch-node
+      - cluster.initial_cluster_manager_nodes=opensearch-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005 -Djava.net.preferIPv4Stack=true"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600
+      - 5005:5005
+    networks:
+      - events-net
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: events-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      - 'OPENSEARCH_HOSTS=["http://opensearch-node:9200"]'
+      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true"
+    networks:
+      - events-net
+  db:
+    image: arm64v8/mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: events_db
+    ports:
+      - 3306:3306
+    networks:
+      - events-net
+  phpmyadmin:
+    image: arm64v8/phpmyadmin:latest
+    restart: always
+    volumes:
+      - ./php.ini:/usr/local/etc/php/conf.d/php.ini
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+      UPLOAD_LIMIT: 100000000
+    ports:
+      - "8080:80"
+    networks:
+      - events-net
+
+volumes:
+  opensearch-data:
+
+networks:
+  events-net:
+
