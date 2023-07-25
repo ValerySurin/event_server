@@ -1,0 +1,13 @@
+/target/
+/Old/
+/Backup/
+.idea/
+php.ini/
+*.iml
+out/
+gen/
+build/
+build.properties
+junit*.properties
+.gradle
+.DS_Store
